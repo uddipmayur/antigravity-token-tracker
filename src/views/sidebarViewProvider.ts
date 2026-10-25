@@ -60,12 +60,10 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
   public sendStats(stats?: AggregatedStats): void {
     if (!this.view) return;
     const data = stats || this.collector.getCachedStats();
-    const config = getExtensionConfig();
     if (data) {
       this.view.webview.postMessage({
         type: 'updateStats',
         stats: data,
-        theme: config.colorTheme,
       });
     }
   }

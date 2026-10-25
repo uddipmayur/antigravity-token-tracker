@@ -1,4 +1,4 @@
-# Antigravity Token Activity & Calendar ⚡📅
+# Antigravity Token Tracker ⚡📅
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![VS Code](https://img.shields.io/badge/Antigravity%20IDE-Extension-007ACC?logo=visualstudiocode)](https://antigravity.google)

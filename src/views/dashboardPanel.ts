@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { TokenCollector } from '../data/tokenCollector';
 import { getWebviewHtml } from '../webview/htmlTemplate';
 import { getExtensionConfig } from '../config';
-import { AggregatedStats, HeatmapTheme } from '../types';
+import { AggregatedStats } from '../types';
 
 export class DashboardPanel {
   public static currentPanel: DashboardPanel | undefined;
@@ -25,7 +25,7 @@ export class DashboardPanel {
 
     const panel = vscode.window.createWebviewPanel(
       'antigravityTokenDashboard',
-      'Antigravity Token Activity',
+      'Antigravity Token Tracker',
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -59,9 +59,6 @@ export class DashboardPanel {
             break;
           case 'refresh':
             await this.collector.refresh(true);
-            break;
-          case 'changeTheme':
-            await this.handleThemeChange(message.theme);
             break;
           case 'exportJson':
             await this.exportJson();
@@ -100,19 +97,12 @@ export class DashboardPanel {
 
   private sendStats(stats?: AggregatedStats): void {
     const data = stats || this.collector.getCachedStats();
-    const config = getExtensionConfig();
     if (data) {
       this.panel.webview.postMessage({
         type: 'updateStats',
         stats: data,
-        theme: config.colorTheme,
       });
     }
-  }
-
-  private async handleThemeChange(theme: HeatmapTheme): Promise<void> {
-    const cfg = vscode.workspace.getConfiguration('antigravityTokenCalendar');
-    await cfg.update('colorTheme', theme, vscode.ConfigurationTarget.Global);
   }
 
   private async exportJson(): Promise<void> {

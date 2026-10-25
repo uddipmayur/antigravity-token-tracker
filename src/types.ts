@@ -96,7 +96,6 @@ export interface AggregatedStats {
   recentSessions: SessionInfo[];
   lastRefreshedAt: string;
   rpcConnected: boolean;
-  rpcPid?: number;
   rpcPort?: number;
 }
 

@@ -2,7 +2,6 @@ import {
   AggregatedStats,
   DayTokenStats,
   HeatmapMetric,
-  HeatmapTheme,
   TimeRangePreset,
 } from '../types';
 
@@ -17,14 +16,12 @@ const vscode = acquireVsCodeApi();
 interface AppState {
   timeRange: TimeRangePreset;
   metric: HeatmapMetric;
-  theme: HeatmapTheme;
   selectedDate: string | null;
 }
 
 const state: AppState = {
   timeRange: '180d',
   metric: 'total',
-  theme: 'github-green',
   selectedDate: null,
 };
 
@@ -44,15 +41,7 @@ window.addEventListener('message', (event) => {
   switch (msg.type) {
     case 'updateStats':
       currentStats = msg.stats;
-      if (msg.theme && !state.theme) {
-        state.theme = msg.theme;
-      }
       renderAll();
-      break;
-    case 'setTheme':
-      state.theme = msg.theme;
-      document.body.setAttribute('data-theme', state.theme);
-      renderHeatmap();
       break;
   }
 });
@@ -63,16 +52,6 @@ function setupEventListeners() {
     timeRangeSelect.addEventListener('change', (e) => {
       state.timeRange = (e.target as HTMLSelectElement).value as TimeRangePreset;
       renderAll();
-    });
-  }
-
-  const themeSelect = document.getElementById('theme-select') as HTMLSelectElement | null;
-  if (themeSelect) {
-    themeSelect.addEventListener('change', (e) => {
-      state.theme = (e.target as HTMLSelectElement).value as HeatmapTheme;
-      document.body.setAttribute('data-theme', state.theme);
-      vscode.postMessage({ type: 'changeTheme', theme: state.theme });
-      renderHeatmap();
     });
   }
 
@@ -114,21 +93,6 @@ function setupEventListeners() {
 
 function renderAll() {
   if (!currentStats) return;
-
-  // Set theme attribute
-  document.body.setAttribute('data-theme', state.theme);
-
-  // Update Status Badge
-  const statusEl = document.getElementById('connection-status');
-  if (statusEl) {
-    if (currentStats.rpcConnected) {
-      statusEl.className = 'status-badge';
-      statusEl.innerHTML = `<span class="status-dot"></span> Language Server Connected (PID ${currentStats.rpcPid || 'active'})`;
-    } else {
-      statusEl.className = 'status-badge offline';
-      statusEl.innerHTML = `<span class="status-dot"></span> Cached Offline Mode`;
-    }
-  }
 
   renderKpis();
   renderHeatmap();

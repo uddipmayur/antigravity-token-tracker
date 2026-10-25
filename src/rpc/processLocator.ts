@@ -57,10 +57,25 @@ export class ProcessLocator {
     const validConnections: RpcConnectionInfo[] = [];
 
     for (const cand of candidates) {
+      // Fast path: test parsed extension_server_port from command line args first
+      if (cand.extensionPort > 0) {
+        const ok = await this.testHeartbeat(cand.extensionPort, cand.csrfToken);
+        if (ok) {
+          this.log?.(`ProcessLocator: Fast connected to PID ${cand.pid} on extensionPort ${cand.extensionPort}`);
+          validConnections.push({
+            pid: cand.pid,
+            port: cand.extensionPort,
+            csrfToken: cand.csrfToken,
+          });
+          break;
+        }
+      }
+
       const ports = await this.getListeningPorts(cand.pid);
       this.log?.(`ProcessLocator: PID ${cand.pid} has listening ports: [${ports.join(', ')}]`);
 
       for (const port of ports) {
+        if (port === cand.extensionPort) continue; // Already tested above
         const ok = await this.testHeartbeat(port, cand.csrfToken);
         if (ok) {
           this.log?.(`ProcessLocator: Successfully connected to PID ${cand.pid} on port ${port}`);

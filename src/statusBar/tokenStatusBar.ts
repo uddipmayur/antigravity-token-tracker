@@ -37,7 +37,7 @@ export class TokenStatusBar {
 
     const tooltip = new vscode.MarkdownString('', true);
     tooltip.isTrusted = true;
-    tooltip.appendMarkdown(`### ⚡ Antigravity Token Activity\n\n`);
+    tooltip.appendMarkdown(`### ⚡ Antigravity Token Tracker\n\n`);
     tooltip.appendMarkdown(`- **Today:** ${stats.todayTokens.toLocaleString()} tokens\n`);
     tooltip.appendMarkdown(`- **This Week:** ${stats.thisWeekTokens.toLocaleString()} tokens\n`);
     tooltip.appendMarkdown(`- **This Month:** ${stats.thisMonthTokens.toLocaleString()} tokens\n`);

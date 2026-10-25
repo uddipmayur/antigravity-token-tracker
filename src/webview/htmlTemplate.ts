@@ -26,7 +26,7 @@ export function getWebviewHtml(
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'nonce-${nonce}';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Antigravity Token Activity & Calendar</title>
+  <title>Antigravity Token Tracker</title>
   <link rel="stylesheet" href="${stylesUri}">
 </head>
 <body data-theme="${theme}" class="${isSidebar ? 'sidebar-mode' : ''}">
@@ -35,14 +35,9 @@ export function getWebviewHtml(
   <!-- Header Section -->
   <header class="header-row">
     <div class="brand-section">
-      <img src="${iconUri}" class="brand-icon" alt="Token Calendar" />
+      <img src="${iconUri}" class="brand-icon" alt="Token Tracker" />
       <div>
-        <div class="brand-title">
-          Antigravity Token Activity
-          <span id="connection-status" class="status-badge">
-            <span class="status-dot"></span> Checking connection...
-          </span>
-        </div>
+        <div class="brand-title">Antigravity Token Tracker</div>
       </div>
     </div>
 
@@ -53,14 +48,6 @@ export function getWebviewHtml(
         <option value="180d" selected>Past 180 Days (Half Year)</option>
         <option value="365d">Full Year (365 Days)</option>
         <option value="all">All Time History</option>
-      </select>
-
-      <select id="theme-select" class="select-control" title="Color Theme">
-        <option value="github-green" ${theme === 'github-green' ? 'selected' : ''}>Theme: GitHub Green</option>
-        <option value="antigravity-emerald" ${theme === 'antigravity-emerald' ? 'selected' : ''}>Theme: Neon Emerald</option>
-        <option value="cyberpunk-cyan" ${theme === 'cyberpunk-cyan' ? 'selected' : ''}>Theme: Electric Cyan</option>
-        <option value="solar-flame" ${theme === 'solar-flame' ? 'selected' : ''}>Theme: Solar Flame</option>
-        <option value="amethyst-purple" ${theme === 'amethyst-purple' ? 'selected' : ''}>Theme: Purple Nebula</option>
       </select>
 
       <button id="btn-refresh" class="btn" title="Refresh Now">

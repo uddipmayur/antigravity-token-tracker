@@ -9,9 +9,9 @@ import { getExtensionConfig } from './config';
 let pollTimer: NodeJS.Timeout | null = null;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const output = vscode.window.createOutputChannel('Antigravity Token Activity');
+  const output = vscode.window.createOutputChannel('Antigravity Token Tracker');
   const log = (msg: string) => output.appendLine(`[${new Date().toISOString()}] ${msg}`);
-  log('Antigravity Token Activity & Calendar extension activating...');
+  log('Antigravity Token Tracker v2.1.1 activating...');
 
   const locator = new ProcessLocator(log);
   const collector = new TokenCollector(context, locator, log);
@@ -128,7 +128,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
-  log('Antigravity Token Activity extension activated successfully.');
+  log('Antigravity Token Tracker activated successfully.');
 }
 
 export function deactivate(): void {

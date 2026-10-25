@@ -12,7 +12,6 @@ export function aggregateTurns(
   turns: TurnRecord[],
   sessions: SessionInfo[],
   rpcConnected = false,
-  rpcPid?: number,
   rpcPort?: number
 ): AggregatedStats {
   const daysMap: Record<string, DayTokenStats> = {};
@@ -24,6 +23,8 @@ export function aggregateTurns(
   let allTimeThinking = 0;
   let allTimeCache = 0;
   let allTimeTurns = 0;
+
+  const dateSessionMap = new Map<string, Map<string, { tokens: number; turns: number; models: Set<string> }>>();
 
   // 1. Group turns into days
   for (const turn of turns) {
@@ -108,35 +109,44 @@ export function aggregateTurns(
     allTimeThinking += u.thinkingTokens;
     allTimeCache += u.cacheReadTokens;
     allTimeTurns += 1;
+
+    // Pre-index session turn aggregates per date (linear O(1) per turn)
+    let sMap = dateSessionMap.get(dStr);
+    if (!sMap) {
+      sMap = new Map();
+      dateSessionMap.set(dStr, sMap);
+    }
+    let sEntry = sMap.get(turn.sessionId);
+    if (!sEntry) {
+      sEntry = { tokens: 0, turns: 0, models: new Set() };
+      sMap.set(turn.sessionId, sEntry);
+    }
+    sEntry.tokens += u.totalTokens;
+    sEntry.turns += 1;
+    sEntry.models.add(turn.modelDisplayName);
   }
 
-  // 2. Link sessions into each day
-  for (const session of sessions) {
-    // Find turns belonging to this session
-    const sessionTurns = turns.filter((t) => t.sessionId === session.id);
-    const dayIds = new Set(sessionTurns.map((t) => t.date));
+  // 2. Link sessions into each day in linear O(S + T) time
+  const sessionInfoMap = new Map<string, SessionInfo>();
+  for (const s of sessions) {
+    sessionInfoMap.set(s.id, s);
+  }
 
-    for (const dStr of dayIds) {
-      const day = daysMap[dStr];
-      if (!day) continue;
+  for (const [dStr, sMap] of dateSessionMap) {
+    const day = daysMap[dStr];
+    if (!day) continue;
 
-      const turnsForDay = sessionTurns.filter((t) => t.date === dStr);
-      const daySessionTokens = turnsForDay.reduce((acc, t) => acc + t.usage.totalTokens, 0);
-      const daySessionModels = Array.from(new Set(turnsForDay.map((t) => t.modelDisplayName)));
-
+    for (const [sessionId, sData] of sMap) {
+      const sInfo = sessionInfoMap.get(sessionId);
       day.sessions.push({
-        id: session.id,
-        title: session.title || 'Untitled Session',
-        totalTokens: daySessionTokens,
-        turns: turnsForDay.length,
-        models: daySessionModels,
-        lastModifiedAt: session.lastModifiedAt,
+        id: sessionId,
+        title: sInfo?.title || 'Untitled Session',
+        totalTokens: sData.tokens,
+        turns: sData.turns,
+        models: Array.from(sData.models),
+        lastModifiedAt: sInfo?.lastModifiedAt || '',
       });
     }
-  }
-
-  // Sort sessions within each day by tokens descending
-  for (const day of Object.values(daysMap)) {
     day.sessionCount = day.sessions.length;
     day.sessions.sort((a, b) => b.totalTokens - a.totalTokens);
   }
@@ -258,7 +268,6 @@ export function aggregateTurns(
     recentSessions: sortedSessions,
     lastRefreshedAt: new Date().toISOString(),
     rpcConnected,
-    rpcPid,
     rpcPort,
   };
 }

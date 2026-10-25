@@ -93,6 +93,7 @@ export class TokenCollector {
     // 2. Discover all session IDs from RPC + Filesystem
     const sessionIds = new Set<string>(Object.keys(rpcSummaries));
     const sessionRoots = this.resolveSessionRoots(config.customSessionRoot);
+    const dbPathMap = new Map<string, string>();
 
     for (const root of sessionRoots) {
       const convDir = path.join(root, 'conversations');
@@ -101,7 +102,11 @@ export class TokenCollector {
           const files = await fs.promises.readdir(convDir);
           for (const f of files) {
             if (f.endsWith('.db') || f.endsWith('.pb')) {
-              sessionIds.add(path.basename(f, path.extname(f)));
+              const sId = path.basename(f, path.extname(f));
+              sessionIds.add(sId);
+              if (!dbPathMap.has(sId)) {
+                dbPathMap.set(sId, path.join(convDir, f));
+              }
             }
           }
         } catch {
@@ -130,21 +135,26 @@ export class TokenCollector {
     const updatedSessionsMap: Record<string, SessionInfo> = { ...diskCache.cachedSessions };
     const updatedHashes = { ...diskCache.sessionHashes };
 
-    // 3. For each session, fetch or re-use cached data
+    // 3. For each session, determine whether to fetch or re-use cached data
+    const sessionsToFetch: Array<{ sessionId: string; lastModStr: string; stepCount: number; sessionTitle: string }> = [];
+
     for (const sessionId of sessionIds) {
       const rpcSummary = rpcSummaries[sessionId];
-      const dbPath = this.findSessionDb(sessionRoots, sessionId);
-      let fileModTime = 0;
-      if (dbPath && fs.existsSync(dbPath)) {
-        try {
-          const st = fs.statSync(dbPath);
-          fileModTime = Math.round(st.mtimeMs);
-        } catch {
-          // Ignore
+      let lastModStr = rpcSummary?.lastModifiedTime || '';
+
+      // Only stat filesystem if lastModifiedTime is missing from RPC
+      if (!lastModStr) {
+        const dbPath = dbPathMap.get(sessionId) || this.findSessionDb(sessionRoots, sessionId);
+        if (dbPath && fs.existsSync(dbPath)) {
+          try {
+            const st = fs.statSync(dbPath);
+            lastModStr = new Date(Math.round(st.mtimeMs)).toISOString();
+          } catch {
+            // Ignore
+          }
         }
       }
 
-      const lastModStr = rpcSummary?.lastModifiedTime || (fileModTime ? new Date(fileModTime).toISOString() : '');
       const stepCount = rpcSummary?.stepCount ?? 0;
       const cachedHash = updatedHashes[sessionId];
 
@@ -159,88 +169,100 @@ export class TokenCollector {
         continue;
       }
 
-      // Need to fetch metadata for this session if RPC is available
       if (rpcConnected) {
-        try {
-          const metadata = await this.rpcClient.getCascadeTrajectoryGeneratorMetadata(sessionId);
-          if (metadata && metadata.length > 0) {
-            const parsedTurns: TurnRecord[] = [];
-            const sessionModels = new Set<string>();
-            const sessionUsage: TokenUsage = {
-              inputTokens: 0,
-              outputTokens: 0,
-              thinkingTokens: 0,
-              cacheReadTokens: 0,
-              totalTokens: 0,
-            };
+        const sessionTitle =
+          rpcSummary?.summary ||
+          this.guessSessionTitle(sessionRoots, sessionId) ||
+          'Session ' + sessionId.slice(0, 8);
+        sessionsToFetch.push({ sessionId, lastModStr, stepCount, sessionTitle });
+      }
+    }
 
-            const sessionTitle = rpcSummary?.summary || this.guessSessionTitle(sessionRoots, sessionId) || 'Session ' + sessionId.slice(0, 8);
-
-            for (const item of metadata) {
-              const cm = item.chatModel;
-              if (!cm) continue;
-
-              const u = cm.usage || {};
-              const inp = parseInt(String(u.inputTokens || 0), 10) || 0;
-              const out = parseInt(String(u.outputTokens || 0), 10) || 0;
-              const think = parseInt(String(u.thinkingOutputTokens || 0), 10) || 0;
-              const cache = parseInt(String(u.cacheReadTokens || 0), 10) || 0;
-              const total = inp + out;
-
-              const rawCreated = cm.chatStartMetadata?.createdAt;
-              const createdAt = rawCreated ? new Date(rawCreated) : new Date();
-              const dateStr = toLocalDateString(createdAt);
-              const hour = createdAt.getHours();
-
-              const resolved = resolveModelName(cm.responseModel || cm.model, cm.modelDisplayName);
-              sessionModels.add(resolved.displayName);
-
-              const turnUsage: TokenUsage = {
-                inputTokens: inp,
-                outputTokens: out,
-                thinkingTokens: think,
-                cacheReadTokens: cache,
-                totalTokens: total,
+    // Fetch uncached session metadata concurrently in batches of 5
+    const CONCURRENCY = 5;
+    for (let i = 0; i < sessionsToFetch.length; i += CONCURRENCY) {
+      const batch = sessionsToFetch.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        batch.map(async ({ sessionId, lastModStr, stepCount, sessionTitle }) => {
+          try {
+            const metadata = await this.rpcClient.getCascadeTrajectoryGeneratorMetadata(sessionId);
+            if (metadata && metadata.length > 0) {
+              const parsedTurns: TurnRecord[] = [];
+              const sessionModels = new Set<string>();
+              const sessionUsage: TokenUsage = {
+                inputTokens: 0,
+                outputTokens: 0,
+                thinkingTokens: 0,
+                cacheReadTokens: 0,
+                totalTokens: 0,
               };
 
-              sessionUsage.inputTokens += inp;
-              sessionUsage.outputTokens += out;
-              sessionUsage.thinkingTokens += think;
-              sessionUsage.cacheReadTokens += cache;
-              sessionUsage.totalTokens += total;
+              for (const item of metadata) {
+                const cm = item.chatModel;
+                if (!cm) continue;
 
-              parsedTurns.push({
-                sessionId,
-                sessionTitle,
-                timestamp: createdAt.toISOString(),
-                date: dateStr,
-                hour,
-                model: resolved.model,
-                modelDisplayName: resolved.displayName,
-                usage: turnUsage,
-              });
+                const u = cm.usage || {};
+                const inp = parseInt(String(u.inputTokens || 0), 10) || 0;
+                const out = parseInt(String(u.outputTokens || 0), 10) || 0;
+                const think = parseInt(String(u.thinkingOutputTokens || 0), 10) || 0;
+                const cache = parseInt(String(u.cacheReadTokens || 0), 10) || 0;
+                const total = inp + out;
+
+                const rawCreated = cm.chatStartMetadata?.createdAt;
+                const createdAt = rawCreated ? new Date(rawCreated) : new Date();
+                const dateStr = toLocalDateString(createdAt);
+                const hour = createdAt.getHours();
+
+                const resolved = resolveModelName(cm.responseModel || cm.model, cm.modelDisplayName);
+                sessionModels.add(resolved.displayName);
+
+                const turnUsage: TokenUsage = {
+                  inputTokens: inp,
+                  outputTokens: out,
+                  thinkingTokens: think,
+                  cacheReadTokens: cache,
+                  totalTokens: total,
+                };
+
+                sessionUsage.inputTokens += inp;
+                sessionUsage.outputTokens += out;
+                sessionUsage.thinkingTokens += think;
+                sessionUsage.cacheReadTokens += cache;
+                sessionUsage.totalTokens += total;
+
+                parsedTurns.push({
+                  sessionId,
+                  sessionTitle,
+                  timestamp: createdAt.toISOString(),
+                  date: dateStr,
+                  hour,
+                  model: resolved.model,
+                  modelDisplayName: resolved.displayName,
+                  usage: turnUsage,
+                });
+              }
+
+              updatedTurnsMap[sessionId] = parsedTurns;
+              updatedSessionsMap[sessionId] = {
+                id: sessionId,
+                title: sessionTitle,
+                createdAt: rpcSummaries[sessionId]?.createdTime || (parsedTurns[0]?.timestamp ?? new Date().toISOString()),
+                lastModifiedAt: lastModStr || new Date().toISOString(),
+                stepCount: Math.max(stepCount, parsedTurns.length),
+                usage: sessionUsage,
+                models: Array.from(sessionModels),
+              };
+
+              updatedHashes[sessionId] = {
+                lastModified: lastModStr,
+                stepCount: Math.max(stepCount, parsedTurns.length),
+              };
             }
-
-            updatedTurnsMap[sessionId] = parsedTurns;
-            updatedSessionsMap[sessionId] = {
-              id: sessionId,
-              title: sessionTitle,
-              createdAt: rpcSummary?.createdTime || (parsedTurns[0]?.timestamp ?? new Date().toISOString()),
-              lastModifiedAt: lastModStr || new Date().toISOString(),
-              stepCount: Math.max(stepCount, parsedTurns.length),
-              usage: sessionUsage,
-              models: Array.from(sessionModels),
-            };
-
-            updatedHashes[sessionId] = {
-              lastModified: lastModStr,
-              stepCount: Math.max(stepCount, parsedTurns.length),
-            };
+          } catch {
+            // If metadata fetch failed, keep previously cached if available
           }
-        } catch {
-          // If metadata fetch failed, keep previously cached if available
-        }
-      }
+        })
+      );
     }
 
     // 4. Save updated cache
@@ -256,7 +278,7 @@ export class TokenCollector {
     const allTurns = Object.values(updatedTurnsMap).flat();
     const allSessions = Object.values(updatedSessionsMap);
 
-    return aggregateTurns(allTurns, allSessions, rpcConnected, conn?.pid, conn?.port);
+    return aggregateTurns(allTurns, allSessions, rpcConnected, conn?.port);
   }
 
   private resolveSessionRoots(customRoot?: string): string[] {

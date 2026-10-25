@@ -1,8 +1,8 @@
 {
-  "name": "antigravity-token-calendar",
-  "displayName": "Antigravity Token Activity & Calendar",
+  "name": "antigravity-token-tracker",
+  "displayName": "Antigravity Token tracker",
   "description": "Track Antigravity IDE token usage with a GitHub-style calendar contribution heatmap, streaks, and model analytics.",
-  "version": "1.0.0",
+  "version": "2.1.1",
   "publisher": "uddip",
   "icon": "resources/icon.png",
   "repository": {
@@ -101,7 +101,7 @@
       ]
     },
     "configuration": {
-      "title": "Antigravity Token Activity & Calendar",
+      "title": "Antigravity Token Tracker",
       "properties": {
         "antigravityTokenCalendar.pollIntervalMs": {
           "type": "number",
