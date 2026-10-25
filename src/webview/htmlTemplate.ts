@@ -102,11 +102,26 @@ export function getWebviewHtml(
       </div>
 
       <div class="calendar-metric-pills">
-        <button class="metric-pill active" data-metric="total">Total Tokens</button>
-        <button class="metric-pill" data-metric="output">Output & Thinking</button>
-        <button class="metric-pill" data-metric="input">Input Tokens</button>
-        <button class="metric-pill" data-metric="cache">Cache Read</button>
-        <button class="metric-pill" data-metric="turns">Turns / Prompts</button>
+        <button class="metric-pill active" data-metric="total" title="Total Tokens">
+          <span class="pill-full">Total Tokens</span>
+          <span class="pill-short">Total</span>
+        </button>
+        <button class="metric-pill" data-metric="output" title="Output & Thinking">
+          <span class="pill-full">Output & Thinking</span>
+          <span class="pill-short">Output</span>
+        </button>
+        <button class="metric-pill" data-metric="input" title="Input Tokens">
+          <span class="pill-full">Input Tokens</span>
+          <span class="pill-short">Input</span>
+        </button>
+        <button class="metric-pill" data-metric="cache" title="Cache Read">
+          <span class="pill-full">Cache Read</span>
+          <span class="pill-short">Cache</span>
+        </button>
+        <button class="metric-pill" data-metric="turns" title="Turns / Prompts">
+          <span class="pill-full">Turns / Prompts</span>
+          <span class="pill-short">Turns</span>
+        </button>
       </div>
     </div>
 

@@ -283,16 +283,22 @@ body {
   color: var(--text-muted);
 }
 
+.pill-short {
+  display: none;
+}
+
 .calendar-metric-pills {
-  display: inline-flex;
+  display: flex;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 2px;
+  max-width: 100%;
 }
 
 .metric-pill {
-  padding: 4px 10px;
+  flex: 1 1 auto;
+  padding: 4px 8px;
   font-size: 11px;
   font-weight: 500;
   border-radius: 4px;
@@ -301,6 +307,8 @@ body {
   border: none;
   color: var(--text-muted);
   transition: all 0.15s;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .metric-pill:hover {
@@ -525,7 +533,7 @@ body {
 /* Two-column layout for Model Breakdown & Recent Activity */
 .bottom-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
 }
@@ -535,6 +543,8 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 20px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card-title {
@@ -570,27 +580,38 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   font-size: 12px;
+  min-width: 0;
 }
 
 .model-info {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .model-color-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .model-name {
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .model-nums {
   text-align: right;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: 8px;
 }
 
 .model-tokens {
@@ -656,4 +677,180 @@ body {
   margin-top: 6px;
   border-top: 1px solid #30363d;
   padding-top: 4px;
+}
+
+/* ==========================================================================
+   SIDEBAR MODE & RESPONSIVE NARROW WIDTH STYLES
+   ========================================================================== */
+body.sidebar-mode {
+  padding: 8px 10px;
+}
+
+.sidebar-mode .pill-full {
+  display: none;
+}
+
+.sidebar-mode .pill-short {
+  display: inline;
+}
+
+.sidebar-mode .header-row {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  gap: 8px;
+}
+
+.sidebar-mode #btn-export-json,
+.sidebar-mode #btn-export-csv {
+  display: none;
+}
+
+.sidebar-mode .brand-title {
+  font-size: 14px;
+}
+
+.sidebar-mode .brand-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.sidebar-mode .kpi-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sidebar-mode .kpi-card {
+  padding: 10px;
+}
+
+.sidebar-mode .kpi-value {
+  font-size: 18px;
+}
+
+.sidebar-mode .kpi-subtext {
+  font-size: 10px;
+}
+
+.sidebar-mode .calendar-card,
+.sidebar-mode .card {
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.sidebar-mode .calendar-header {
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.sidebar-mode .calendar-metric-pills {
+  width: 100%;
+}
+
+.sidebar-mode .metric-pill {
+  padding: 4px 6px;
+  font-size: 10px;
+}
+
+.sidebar-mode .bottom-grid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sidebar-mode .model-row {
+  font-size: 11px;
+}
+
+.sidebar-mode .model-pct {
+  font-size: 10px;
+}
+
+.sidebar-mode .session-item {
+  padding: 8px 10px;
+}
+
+@media (max-width: 550px) {
+  body {
+    padding: 8px 10px;
+  }
+
+  .pill-full {
+    display: none;
+  }
+
+  .pill-short {
+    display: inline;
+  }
+
+  .header-row {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    gap: 8px;
+  }
+
+  #btn-export-json,
+  #btn-export-csv {
+    display: none;
+  }
+
+  .brand-title {
+    font-size: 14px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .kpi-card {
+    padding: 10px;
+  }
+
+  .kpi-value {
+    font-size: 18px;
+  }
+
+  .kpi-subtext {
+    font-size: 10px;
+  }
+
+  .calendar-card,
+  .card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .calendar-header {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .calendar-metric-pills {
+    width: 100%;
+  }
+
+  .metric-pill {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+
+  .bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .model-row {
+    font-size: 11px;
+  }
+
+  .model-pct {
+    font-size: 10px;
+  }
+
+  .session-item {
+    padding: 8px 10px;
+  }
 }

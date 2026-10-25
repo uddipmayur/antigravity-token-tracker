@@ -238,6 +238,7 @@ function renderHeatmap() {
   // Month labels along the top
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   let lastMonth = -1;
+  let lastLabelWIndex = -10;
 
   weeks.forEach((week, wIndex) => {
     const firstDay = week[0]?.date;
@@ -245,14 +246,20 @@ function renderHeatmap() {
       const monthIndex = firstDay.getMonth();
       if (monthIndex !== lastMonth) {
         lastMonth = monthIndex;
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', `${leftMargin + wIndex * weekWidth}`);
-        text.setAttribute('y', '12');
-        text.setAttribute('font-size', '10');
-        text.setAttribute('fill', 'var(--text-muted)');
-        text.setAttribute('font-family', 'var(--font-family)');
-        text.textContent = monthNames[monthIndex];
-        svg.appendChild(text);
+        // Don't label a partial month at week 0 if next week already starts a new month
+        const isTinyStart = wIndex === 0 && weeks.length > 1 && weeks[1]?.[0]?.date.getMonth() !== monthIndex;
+        // Require at least 2 columns spacing between month labels to avoid text collision (e.g. AprMay)
+        if (!isTinyStart && (wIndex - lastLabelWIndex) >= 2) {
+          lastLabelWIndex = wIndex;
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', `${leftMargin + wIndex * weekWidth}`);
+          text.setAttribute('y', '12');
+          text.setAttribute('font-size', '10');
+          text.setAttribute('fill', 'var(--text-muted)');
+          text.setAttribute('font-family', 'var(--font-family)');
+          text.textContent = monthNames[monthIndex];
+          svg.appendChild(text);
+        }
       }
     }
   });
@@ -332,6 +339,12 @@ function renderHeatmap() {
       svg.appendChild(rect);
     });
   });
+
+  // Auto-scroll to right to show recent dates
+  const scrollContainer = document.querySelector('.heatmap-scroll-container') as HTMLElement | null;
+  if (scrollContainer && !state.selectedDate) {
+    scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+  }
 }
 
 function getDayMetricValue(dayStats: DayTokenStats | null, metric: HeatmapMetric): number {
@@ -462,7 +475,7 @@ function renderDayInspector() {
   for (const s of dayStats.sessions) {
     sessionsHtml += `
       <div class="session-item">
-        <div>
+        <div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 8px;">
           <div class="session-title">${escapeHtml(s.title)}</div>
           <div class="session-meta">
             <span>${s.turns} prompt${s.turns === 1 ? '' : 's'}</span>
@@ -593,7 +606,7 @@ function renderRecentSessions() {
     const dateFormatted = s.lastModifiedAt ? formatDateShort(s.lastModifiedAt.slice(0, 10)) : '';
     html += `
       <div class="session-item">
-        <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; padding-right: 8px;">
+        <div style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-right: 8px;">
           <div class="session-title">${escapeHtml(s.title || 'Untitled Session')}</div>
           <div class="session-meta">
             <span>${dateFormatted}</span>
