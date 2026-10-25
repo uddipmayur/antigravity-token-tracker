@@ -1,0 +1,180 @@
+{
+  "name": "antigravity-token-calendar",
+  "displayName": "Antigravity Token Activity & Calendar",
+  "description": "Track Antigravity IDE token usage with a GitHub-style calendar contribution heatmap, streaks, and model analytics.",
+  "version": "1.0.0",
+  "publisher": "uddip",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uddip/antigravity-token-calendar"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization",
+    "Education"
+  ],
+  "keywords": [
+    "antigravity",
+    "tokens",
+    "calendar",
+    "heatmap",
+    "github",
+    "contribution",
+    "ai",
+    "gemini"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:antigravity-token-calendar.sidebar",
+    "onCommand:antigravity-token-calendar.openDashboard",
+    "onCommand:antigravity-token-calendar.refresh",
+    "onCommand:antigravity-token-calendar.clearCache"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "antigravity-token-calendar-view",
+          "title": "Token Activity",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "antigravity-token-calendar-view": [
+        {
+          "type": "webview",
+          "id": "antigravity-token-calendar.sidebar",
+          "name": "Token Activity & Heatmap"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "antigravity-token-calendar.openDashboard",
+        "title": "Antigravity: Open Token Activity Dashboard",
+        "category": "Antigravity",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "antigravity-token-calendar.refresh",
+        "title": "Antigravity: Refresh Token Usage Now",
+        "category": "Antigravity",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "antigravity-token-calendar.clearCache",
+        "title": "Antigravity: Clear Cache and Rescan All Sessions",
+        "category": "Antigravity",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "antigravity-token-calendar.exportJson",
+        "title": "Antigravity: Export Token Usage to JSON",
+        "category": "Antigravity",
+        "icon": "$(json)"
+      },
+      {
+        "command": "antigravity-token-calendar.exportCsv",
+        "title": "Antigravity: Export Token Usage to CSV",
+        "category": "Antigravity",
+        "icon": "$(file-text)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "antigravity-token-calendar.openDashboard",
+          "when": "view == antigravity-token-calendar.sidebar",
+          "group": "navigation@1"
+        },
+        {
+          "command": "antigravity-token-calendar.refresh",
+          "when": "view == antigravity-token-calendar.sidebar",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Antigravity Token Activity & Calendar",
+      "properties": {
+        "antigravityTokenCalendar.pollIntervalMs": {
+          "type": "number",
+          "default": 45000,
+          "minimum": 10000,
+          "description": "Frequency in milliseconds to automatically poll for new session token activity."
+        },
+        "antigravityTokenCalendar.colorTheme": {
+          "type": "string",
+          "default": "github-green",
+          "enum": [
+            "github-green",
+            "antigravity-emerald",
+            "cyberpunk-cyan",
+            "solar-flame",
+            "amethyst-purple"
+          ],
+          "enumDescriptions": [
+            "Classic GitHub green shades",
+            "Antigravity modern neon emerald shades",
+            "Cyberpunk electric cyan & blue shades",
+            "Solar orange & flame shades",
+            "Deep amethyst purple shades"
+          ],
+          "description": "Color theme for the contribution heatmap calendar dots."
+        },
+        "antigravityTokenCalendar.firstDayOfWeek": {
+          "type": "number",
+          "default": 0,
+          "enum": [0, 1],
+          "enumDescriptions": [
+            "Sunday",
+            "Monday"
+          ],
+          "description": "First day of the week for the calendar dots grid (0 = Sunday, 1 = Monday)."
+        },
+        "antigravityTokenCalendar.showStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the real-time token counter in the editor status bar."
+        },
+        "antigravityTokenCalendar.statusBarMetric": {
+          "type": "string",
+          "default": "today-tokens",
+          "enum": [
+            "today-tokens",
+            "total-tokens",
+            "streak"
+          ],
+          "enumDescriptions": [
+            "Show today's total tokens (e.g. 2.9M tokens)",
+            "Show all-time total tokens",
+            "Show current active streak in days"
+          ],
+          "description": "Primary metric to display on the status bar item."
+        },
+        "antigravityTokenCalendar.customSessionRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Optional override path to Antigravity session directory (leave blank for automatic detection of ~/.gemini/antigravity-ide and ~/.gemini/antigravity)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.24",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.8.2"
+  }
+}
