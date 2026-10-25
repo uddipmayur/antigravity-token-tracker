@@ -40,8 +40,8 @@
       "activitybar": [
         {
           "id": "antigravity-token-calendar-view",
-          "title": "Token Activity",
-          "icon": "resources/icon.svg"
+          "title": "Token Tracker",
+          "icon": "resources/activitybar.svg"
         }
       ]
     },
